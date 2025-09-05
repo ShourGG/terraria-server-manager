@@ -77,14 +77,16 @@ detect_platform() {
 local_deploy() {
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local source_dir=""
-    
+
     print_message "从本地文件部署..."
-    
-    # 查找源文件目录
+
+    # 查找源文件目录 - 支持扁平结构和嵌套结构
     if [ -d "$script_dir/temp-$PLATFORM" ]; then
         source_dir="$script_dir/temp-$PLATFORM"
+        print_message "找到源文件目录: $source_dir"
     elif [ -d "$script_dir/temp-linux" ]; then
         source_dir="$script_dir/temp-linux"
+        print_message "找到源文件目录: $source_dir"
     else
         print_error "找不到部署文件目录"
         print_error "请确保以下目录之一存在："
@@ -95,8 +97,6 @@ local_deploy() {
         ls -la "$script_dir" 2>/dev/null || true
         exit 1
     fi
-    
-    print_message "找到源文件目录: $source_dir"
     
     # 创建安装目录
     mkdir -p "$INSTALL_DIR"
