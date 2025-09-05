@@ -97,9 +97,9 @@ get_latest_version() {
 
 # 下载文件
 download_release() {
-    local filename="terraria-panel-$PLATFORM.tar.gz"
+    local filename="terraria-panel-$PLATFORM.zip"
     local download_url="https://github.com/$GITHUB_REPO/releases/download/$LATEST_VERSION/$filename"
-    
+
     print_message "下载发布包: $filename"
     
     # 创建临时目录
@@ -121,14 +121,14 @@ download_release() {
     fi
     
     print_message "解压文件..."
-    tar -xzf "$filename"
+    unzip -q "$filename"
     
     # 创建安装目录
     mkdir -p "$INSTALL_DIR"
     
     # 复制文件
     print_message "安装到: $INSTALL_DIR"
-    cp -r terraria-panel-$PLATFORM/* "$INSTALL_DIR/"
+    cp -r temp-$PLATFORM/* "$INSTALL_DIR/"
     
     # 设置执行权限
     chmod +x "$INSTALL_DIR/terraria-panel"
