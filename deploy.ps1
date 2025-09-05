@@ -7,7 +7,7 @@ param(
 )
 
 # 项目信息
-$GitHubRepo = "your-username/terraria-panel"
+$GitHubRepo = "ShourGG/terraria-server-manager"
 $GitHubAPI = "https://api.github.com/repos/$GitHubRepo"
 $ServiceName = "terraria-panel"
 

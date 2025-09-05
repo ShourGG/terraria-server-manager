@@ -14,7 +14,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 项目信息
-GITHUB_REPO="your-username/terraria-panel"
+GITHUB_REPO="ShourGG/terraria-server-manager"
 GITHUB_API="https://api.github.com/repos/$GITHUB_REPO"
 INSTALL_DIR="$HOME/terraria-panel"
 SERVICE_NAME="terraria-panel"

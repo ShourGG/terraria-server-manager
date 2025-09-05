@@ -32,18 +32,18 @@
 
 **Linux/macOS**：
 ```bash
-curl -fsSL https://github.com/your-username/terraria-panel/releases/latest/download/deploy.sh | bash
+curl -fsSL https://github.com/ShourGG/terraria-server-manager/releases/latest/download/deploy.sh | bash
 ```
 
 **Windows PowerShell**：
 ```powershell
-iwr -useb https://github.com/your-username/terraria-panel/releases/latest/download/deploy.ps1 | iex
+iwr -useb https://github.com/ShourGG/terraria-server-manager/releases/latest/download/deploy.ps1 | iex
 ```
 
 ### 方法二：手动下载发布版
 
 1. **访问发布页面**：
-   前往 [Releases](https://github.com/your-username/terraria-panel/releases) 页面
+   前往 [Releases](https://github.com/ShourGG/terraria-server-manager/releases) 页面
 
 2. **下载对应平台的压缩包**：
    - **Linux AMD64**: `terraria-panel-linux.tar.gz`
@@ -67,8 +67,8 @@ iwr -useb https://github.com/your-username/terraria-panel/releases/latest/downlo
 
 1. **克隆项目**：
 ```bash
-git clone https://github.com/your-username/terraria-panel.git
-cd terraria-panel
+git clone https://github.com/ShourGG/terraria-server-manager.git
+cd terraria-server-manager
 ```
 
 2. **运行构建脚本**：
