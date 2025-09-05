@@ -122,13 +122,32 @@ download_release() {
     
     print_message "解压文件..."
     unzip -q "$filename"
-    
+
+    # 检查解压结果
+    print_message "检查解压内容..."
+    ls -la
+
+    # 查找解压出的目录
+    extracted_dir=""
+    if [ -d "temp-$PLATFORM" ]; then
+        extracted_dir="temp-$PLATFORM"
+    elif [ -d "temp-linux" ]; then
+        extracted_dir="temp-linux"
+    elif [ -d "temp-windows" ]; then
+        extracted_dir="temp-windows"
+    else
+        print_error "找不到解压目录"
+        exit 1
+    fi
+
+    print_message "找到解压目录: $extracted_dir"
+
     # 创建安装目录
     mkdir -p "$INSTALL_DIR"
-    
+
     # 复制文件
     print_message "安装到: $INSTALL_DIR"
-    cp -r temp-$PLATFORM/* "$INSTALL_DIR/"
+    cp -r "$extracted_dir"/* "$INSTALL_DIR/"
     
     # 设置执行权限
     chmod +x "$INSTALL_DIR/terraria-panel"
