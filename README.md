@@ -28,17 +28,30 @@
 
 ## 🚀 快速开始
 
-### 方法一：一键部署脚本（推荐）
+### 方法一：本地部署脚本（推荐）
 
 **Linux/macOS**：
 ```bash
-curl -fsSL https://github.com/ShourGG/terraria-server-manager/releases/latest/download/deploy.sh | bash
+# 下载项目文件
+git clone https://github.com/ShourGG/terraria-server-manager.git
+cd terraria-server-manager
+
+# 运行本地部署脚本
+chmod +x deploy-local.sh
+./deploy-local.sh
 ```
 
 **Windows PowerShell**：
 ```powershell
-iwr -useb https://github.com/ShourGG/terraria-server-manager/releases/latest/download/deploy.ps1 | iex
+# 下载项目文件
+git clone https://github.com/ShourGG/terraria-server-manager.git
+cd terraria-server-manager
+
+# 运行PowerShell部署脚本
+.\deploy.ps1
 ```
+
+> **💡 提示**：本地部署脚本不依赖GitHub Release下载，直接使用项目中的文件，更加稳定可靠。
 
 ### 方法二：手动下载发布版
 
