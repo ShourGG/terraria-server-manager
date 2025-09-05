@@ -136,7 +136,8 @@ download_release() {
     elif [ -d "temp-windows" ]; then
         extracted_dir="temp-windows"
     else
-        print_error "找不到解压目录"
+        print_error "找不到解压目录，检查当前目录内容："
+        ls -la
         exit 1
     fi
 
