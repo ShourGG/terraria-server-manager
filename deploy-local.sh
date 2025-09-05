@@ -77,46 +77,73 @@ detect_platform() {
 local_deploy() {
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local source_dir=""
+    local zip_file=""
 
     print_message "从本地文件部署..."
 
-    # 查找源文件目录 - 支持扁平结构和嵌套结构
-    if [ -d "$script_dir/temp-$PLATFORM" ]; then
-        source_dir="$script_dir/temp-$PLATFORM"
-        print_message "找到源文件目录: $source_dir"
-    elif [ -d "$script_dir/temp-linux" ]; then
-        source_dir="$script_dir/temp-linux"
-        print_message "找到源文件目录: $source_dir"
+    # 查找ZIP文件进行部署
+    if [ -f "$script_dir/terraria-panel-$PLATFORM.zip" ]; then
+        zip_file="$script_dir/terraria-panel-$PLATFORM.zip"
+    elif [ -f "$script_dir/terraria-panel-linux.zip" ]; then
+        zip_file="$script_dir/terraria-panel-linux.zip"
+    fi
+
+    if [ -n "$zip_file" ]; then
+        print_message "找到ZIP文件: $zip_file"
+
+        # 创建安装目录
+        mkdir -p "$INSTALL_DIR"
+
+        # 解压ZIP文件
+        if command -v unzip >/dev/null 2>&1; then
+            print_message "解压文件到: $INSTALL_DIR"
+            unzip -q "$zip_file" -d "$INSTALL_DIR"
+            print_message "✅ ZIP文件解压完成"
+        else
+            print_error "系统缺少unzip命令，请安装: apt-get install unzip 或 yum install unzip"
+            exit 1
+        fi
     else
-        print_error "找不到部署文件目录"
-        print_error "请确保以下目录之一存在："
-        print_error "  - temp-$PLATFORM"
-        print_error "  - temp-linux"
-        print_error ""
-        print_error "当前目录内容："
-        ls -la "$script_dir" 2>/dev/null || true
-        exit 1
+        # 回退到目录复制方式
+        if [ -d "$script_dir/temp-$PLATFORM" ]; then
+            source_dir="$script_dir/temp-$PLATFORM"
+        elif [ -d "$script_dir/temp-linux" ]; then
+            source_dir="$script_dir/temp-linux"
+        else
+            print_error "找不到部署文件"
+            print_error "请确保以下文件或目录之一存在："
+            print_error "  - terraria-panel-$PLATFORM.zip"
+            print_error "  - terraria-panel-linux.zip"
+            print_error "  - temp-$PLATFORM/"
+            print_error "  - temp-linux/"
+            print_error ""
+            print_error "当前目录内容："
+            ls -la "$script_dir" 2>/dev/null || true
+            exit 1
+        fi
+
+        print_message "找到源文件目录: $source_dir"
+
+        # 创建安装目录
+        mkdir -p "$INSTALL_DIR"
+
+        # 复制文件
+        print_message "复制文件到: $INSTALL_DIR"
+        cp -r "$source_dir"/* "$INSTALL_DIR/"
+
+        # 复制前端文件
+        if [ -d "$script_dir/dist" ]; then
+            cp -r "$script_dir/dist" "$INSTALL_DIR/"
+            print_message "✅ 复制前端文件"
+        fi
     fi
-    
-    # 创建安装目录
-    mkdir -p "$INSTALL_DIR"
-    
-    # 复制文件
-    print_message "复制文件到: $INSTALL_DIR"
-    cp -r "$source_dir"/* "$INSTALL_DIR/"
-    
-    # 复制前端文件
-    if [ -d "$script_dir/dist" ]; then
-        cp -r "$script_dir/dist" "$INSTALL_DIR/"
-        print_message "✅ 复制前端文件"
-    fi
-    
+
     # 设置执行权限
-    chmod +x "$INSTALL_DIR/terraria-panel" 2>/dev/null || true
+    chmod +x "$INSTALL_DIR/terraria-panel"* 2>/dev/null || true
     if [ -f "$INSTALL_DIR/start.sh" ]; then
         chmod +x "$INSTALL_DIR/start.sh"
     fi
-    
+
     print_message "本地部署完成！"
 }
 
@@ -124,32 +151,64 @@ local_deploy() {
 start_service() {
     print_message "启动服务..."
     cd "$INSTALL_DIR"
-    
+
     # 停止可能存在的旧进程
     pkill -f "terraria-panel" 2>/dev/null || true
     pkill -f "python3 -m http.server 8090" 2>/dev/null || true
-    
-    # 检查程序文件
-    if [ ! -f "./terraria-panel" ]; then
+
+    # 查找可执行文件
+    local executable=""
+    if [ -f "./terraria-panel" ]; then
+        executable="./terraria-panel"
+    elif [ -f "./terraria-panel-linux" ]; then
+        executable="./terraria-panel-linux"
+    elif [ -f "./terraria-panel-linux-new" ]; then
+        executable="./terraria-panel-linux-new"
+    else
         print_error "找不到 terraria-panel 程序文件"
-        exit 1
+        print_error "当前目录内容："
+        ls -la . 2>/dev/null || true
+        print_warning "尝试使用Python HTTP服务器作为备选方案"
+
+        # 使用Python HTTP服务器作为备选
+        if command -v python3 >/dev/null 2>&1; then
+            nohup python3 -m http.server 8090 --bind 0.0.0.0 > web-server.log 2>&1 &
+            echo $! > web-server.pid
+            print_message "✅ 使用Python HTTP服务器启动"
+            sleep 3
+            check_port_listening
+            return
+        else
+            print_error "Python3也不可用，部署失败"
+            exit 1
+        fi
     fi
-    
-    # 启动服务（使用Python HTTP服务器作为备选）
-    if ./terraria-panel > terraria-panel.log 2>&1 &
+
+    print_message "找到可执行文件: $executable"
+
+    # 启动服务
+    if $executable > terraria-panel.log 2>&1 &
     then
         echo $! > terraria-panel.pid
-        print_message "✅ 使用 terraria-panel 程序启动"
+        print_message "✅ 使用 $executable 启动成功"
     else
-        print_warning "terraria-panel 启动失败，使用Python HTTP服务器"
-        nohup python3 -m http.server 8090 --bind 0.0.0.0 > web-server.log 2>&1 &
-        echo $! > web-server.pid
-        print_message "✅ 使用Python HTTP服务器启动"
+        print_warning "$executable 启动失败，使用Python HTTP服务器"
+        if command -v python3 >/dev/null 2>&1; then
+            nohup python3 -m http.server 8090 --bind 0.0.0.0 > web-server.log 2>&1 &
+            echo $! > web-server.pid
+            print_message "✅ 使用Python HTTP服务器启动"
+        else
+            print_error "启动失败，无可用的服务器程序"
+            exit 1
+        fi
     fi
-    
+
     sleep 3
-    
-    # 检查端口监听
+    check_port_listening
+}
+
+# 检查端口监听
+check_port_listening() {
     if command -v netstat >/dev/null 2>&1; then
         if netstat -tlnp 2>/dev/null | grep -q ":8090"; then
             print_message "✅ 端口8090监听正常"
