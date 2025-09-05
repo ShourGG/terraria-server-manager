@@ -1,0 +1,47 @@
+# 编译输出
+*.exe
+*.bin
+terraria-manager
+terraria-panel
+
+# 依赖目录
+node_modules/
+dist/
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+temp/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 环境配置
+.env
+.env.local
+.env.production
+
+# 泰拉瑞亚服务器文件
+terraria-servers/
+
+# 构建缓存
+.cache/
+.parcel-cache/
+
+# 测试覆盖率
+coverage/
+
+# 包管理器锁定文件（保留package-lock.json，排除其他）
+pnpm-lock.yaml
+yarn.lock

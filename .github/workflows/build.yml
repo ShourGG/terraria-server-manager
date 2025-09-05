@@ -1,0 +1,179 @@
+name: 🚀 Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 🔨 Build Multi-Platform
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: 🐹 Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: 📦 Install Frontend Dependencies
+      working-directory: frontend
+      run: npm ci
+      
+    - name: 🔨 Build Frontend (with Obfuscation)
+      working-directory: frontend
+      run: |
+        npm run build
+        # 压缩HTML文件
+        gzip -k dist/index.html
+        # 压缩JS和CSS文件
+        find dist/assets -name "*.js" -exec gzip -k {} \;
+        find dist/assets -name "*.css" -exec gzip -k {} \;
+        
+    - name: 📁 Copy Frontend to Dist
+      run: |
+        mkdir -p dist
+        cp -r frontend/dist/* dist/
+        
+    - name: 🔨 Build Backend Binaries
+      working-directory: backend
+      run: |
+        # 安装依赖
+        go mod tidy
+        
+        # 构建 Linux AMD64
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o ../release/terraria-panel-linux main.go
+        
+        # 构建 Windows AMD64
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o ../release/terraria-panel-windows.exe main.go
+        
+        # 构建 macOS AMD64
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o ../release/terraria-panel-macos main.go
+        
+        # 构建 Linux ARM64
+        GOOS=linux GOARCH=arm64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o ../release/terraria-panel-linux-arm64 main.go
+        
+    - name: 📦 Create Release Packages
+      run: |
+        mkdir -p packages
+        
+        # 为每个平台创建发布包
+        platforms=("linux" "windows" "macos" "linux-arm64")
+        
+        for platform in "${platforms[@]}"; do
+          echo "📦 打包 $platform 版本..."
+          mkdir -p "terraria-panel-$platform"
+          
+          # 复制二进制文件
+          if [ "$platform" = "windows" ]; then
+            cp "release/terraria-panel-windows.exe" "terraria-panel-$platform/terraria-panel.exe"
+            # 创建Windows启动脚本
+            cat > "terraria-panel-$platform/start.bat" << 'EOF'
+        @echo off
+        echo 🎮 启动泰拉瑞亚服务器管理面板...
+        terraria-panel.exe
+        pause
+        EOF
+          else
+            if [ "$platform" = "linux-arm64" ]; then
+              cp "release/terraria-panel-linux-arm64" "terraria-panel-$platform/terraria-panel"
+            else
+              cp "release/terraria-panel-$platform" "terraria-panel-$platform/terraria-panel"
+            fi
+            chmod +x "terraria-panel-$platform/terraria-panel"
+            # 创建Linux/macOS启动脚本
+            cat > "terraria-panel-$platform/start.sh" << 'EOF'
+        #!/bin/bash
+        echo "🎮 启动泰拉瑞亚服务器管理面板..."
+        ./terraria-panel
+        EOF
+            chmod +x "terraria-panel-$platform/start.sh"
+          fi
+          
+          # 复制前端文件
+          cp -r dist "terraria-panel-$platform/"
+          
+          # 复制文档
+          cp README.md "terraria-panel-$platform/"
+          
+          # 创建压缩包
+          if [ "$platform" = "windows" ]; then
+            zip -r "packages/terraria-panel-$platform.zip" "terraria-panel-$platform/"
+          else
+            tar -czf "packages/terraria-panel-$platform.tar.gz" "terraria-panel-$platform/"
+          fi
+          
+          # 清理临时目录
+          rm -rf "terraria-panel-$platform/"
+        done
+        
+    - name: 📋 Generate Checksums
+      run: |
+        cd packages
+        sha256sum * > checksums.txt
+        
+    - name: 🚀 Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          packages/*
+          deploy.sh
+          deploy.ps1
+        body: |
+          ## 🎮 泰拉瑞亚服务器管理面板 ${{ github.ref_name }}
+          
+          ### ✨ 新功能
+          - 自动下载官方泰拉瑞亚服务器文件
+          - 跨平台支持（Windows/Linux/macOS）
+          - 实时服务器监控
+          - 现代化Web界面
+          
+          ### 📥 快速安装
+          
+          **Linux/macOS:**
+          ```bash
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/deploy.sh | bash
+          ```
+          
+          **Windows (PowerShell):**
+          ```powershell
+          iwr -useb https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/deploy.ps1 | iex
+          ```
+          
+          ### 📦 手动下载
+          - **Linux AMD64**: terraria-panel-linux.tar.gz
+          - **Linux ARM64**: terraria-panel-linux-arm64.tar.gz  
+          - **Windows**: terraria-panel-windows.zip
+          - **macOS**: terraria-panel-macos.tar.gz
+          
+          ### 🔐 文件校验
+          下载后请验证文件完整性：
+          ```bash
+          sha256sum -c checksums.txt
+          ```
+          
+          ### 📚 使用说明
+          1. 下载对应平台的压缩包
+          2. 解压到任意目录
+          3. 运行 `start.sh` (Linux/macOS) 或 `start.bat` (Windows)
+          4. 浏览器访问 http://localhost:8090
+          
+          ---
+          
+          **完整文档**: https://github.com/${{ github.repository }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

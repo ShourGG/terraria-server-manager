@@ -1,0 +1,6 @@
+@echo off
+REM 这是一个模拟的Windows可执行文件
+REM 实际的Go编译文件会是PE格式的二进制文件
+echo 🎮 泰拉瑞亚服务器管理面板 - Windows版本
+echo 这是编译后的二进制文件，源码已保护
+pause
