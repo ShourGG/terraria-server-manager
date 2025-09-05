@@ -97,7 +97,7 @@ local_deploy() {
         # 解压ZIP文件
         if command -v unzip >/dev/null 2>&1; then
             print_message "解压文件到: $INSTALL_DIR"
-            unzip -q "$zip_file" -d "$INSTALL_DIR"
+            unzip -o -q "$zip_file" -d "$INSTALL_DIR"
             print_message "✅ ZIP文件解压完成"
         else
             print_error "系统缺少unzip命令，请安装: apt-get install unzip 或 yum install unzip"
